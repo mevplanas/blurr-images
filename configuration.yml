@@ -1,0 +1,43 @@
+VIDEO_TO_USE: DJI_0154.MP4
+
+# WALDO model
+MODEL_TO_USE_WALDO: yolov7-W25-1088px-newDefaults-bs96-best-topk-200.onnx 
+
+# Steps to do 
+STEPS:
+  SPLIT_VIDEO: True
+
+# Defining the classes available for WALDO model 
+WALDO_CLASSES: 
+  - car 
+  - van
+  - truck
+  - building 
+  - human
+  - gastank
+  - digger
+  - container
+  - bus
+  - u_pole
+  - boat
+  - bike
+  - smoke
+  - solarpanels
+  - arm
+  - plane
+
+# Defining the classes to plot 
+WALDO_CLASSES_PLOT:
+  - car
+  - van 
+  - truck
+  - human
+  - bus
+  - bike
+
+# Defining the waldo classes to blurr 
+WALDO_CLASSES_BLURR:
+  - human
+
+# Defining the number of frames to plot 
+FRAMES_TO_PLOT: 500
