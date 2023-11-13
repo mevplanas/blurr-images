@@ -1,5 +1,6 @@
 # OS traversal 
 import os 
+import shutil
 
 # Importing the NAS vision model 
 import super_gradients.training.models
@@ -171,8 +172,8 @@ def pipeline() -> None:
         out.release()
 
         # Removing the tmp dir
-        os.remove(tmp_dir_frames)
-        os.remove(tmp_dir_postprocessed_images)
+        shutil.rmtree(tmp_dir_frames)
+        shutil.rmtree(tmp_dir_postprocessed_images)
 
 if __name__ == '__main__':
     pipeline()
