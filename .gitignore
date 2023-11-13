@@ -3,3 +3,7 @@ models/
 output/
 postprocessed_images/
 videos/
+images/
+.vscode/
+__pycache__/
+blurr_env/

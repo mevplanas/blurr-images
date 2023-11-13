@@ -1,0 +1,2 @@
+super-gradients==3.2.1
+tqdm==4.66.1
