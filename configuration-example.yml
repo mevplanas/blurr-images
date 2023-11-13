@@ -6,8 +6,8 @@ CLASSES_TO_BLURR:
   - truck
 
 # If value is 0, no blur will be applied
-# If value is 100, the image part will be completely blurred
-BLURR_INTENSITY: 60
+# If value is 1, the image part will be completely blurred
+BLURR_INTENSITY: 0.7
 
 # NAS model to use 
-NAS_MODEL: yolo_nas_m
+NAS_MODEL: yolo_nas_l
