@@ -1,13 +1,23 @@
 CLASSES_TO_BLURR:
-  - person 
+  - person
   - car
   - van
   - bus
   - truck
-
+ 
 # If value is 0, no blur will be applied
 # If value is 100, the image part will be completely blurred
 BLURR_INTENSITY: 60
-
-# NAS model to use 
+ 
+# NAS model to use
 NAS_MODEL: yolo_nas_m
+
+AZURE_STORAGE_CREDENTIALS:
+  ACCOUNTURL: "https://vp3ddata.blob.core.windows.net/"
+  STORAGEACCOUNTKEY: "Q7kcwkg7esU9I6Q6NTp4JBENmAy2Vvw163UXsgtT3uo2aZForEmzC6+VLms+q0MdRXOLSdqwbQ3s+AStv9cA1w=="
+  CONSTRING: "DefaultEndpointsProtocol=https;AccountName=vp3ddata;AccountKey=KO7esWQ9DNGoV7p/BR4jyZ2mZJDgBlWRtR7K9lVE4KucOcpfFFTmdughE98wI1INTwMWK4aO2oEi+AStNwXdRg==;EndpointSuffix=core.windows.net"
+  CONTAINERNAME: "raw-data-bo-nuotraukos"
+  BLOBNAME: "Stogai"
+
+PATH_TO_AZURE_DATA: "Stogai/Stogai_AI/20230407 Rinktines g. 5A - Atlitude 40m Overlap 80 Margin 15/"
+PATH_FOR_AZURE_FOLDER: 'C:\Users\austeja.burmonaite\OneDrive - UAB VILNIAUS PLANAS\Desktop\blurr-images\input\images'
