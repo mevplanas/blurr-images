@@ -11,3 +11,10 @@ BLURR_INTENSITY: 60
 
 # NAS model to use 
 NAS_MODEL: yolo_nas_m
+
+# Azure credentials 
+INPUT_CONNECTION_STRING: DefaultEndpointsProtocol=https;AccountName=flynowdronedata;AccountKey=/ZhgMlQQgUAthP6Fc3nN3iQm/yaQ9Zugvml7TaBlt4cfGy6UBOxLokzl5G7OAAWeVpLmaAE5/EpE+AStwshUEA==;EndpointSuffix=core.windows.net 
+INPUT_CONTAINER_NAME: dronedata
+
+OUTPUT_CONNECTION_STRING: DefaultEndpointsProtocol=https;AccountName=flynowcleaned;AccountKey=ReFQkDlE0GO1D08OoZI4+LkVMZYvd/cPpEgYpc5qaxcCiFOWo6y5VcW6FHx0EX9yg4YJP74jVehc+ASttIaP8g==;EndpointSuffix=core.windows.net 
+OUTPUT_CONTAINER_NAME: cleaned-data

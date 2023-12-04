@@ -2,6 +2,16 @@
 
 Repository that blurrs certain objects from videos. 
 
+The main commands are: 
+
+```
+python -m src.blurr_images
+```
+
+```
+python -m src.blurr_videos
+```
+
 # Configuration file 
 
 The configuration for the script running is in the `configuration.yml` file. 
@@ -68,14 +78,6 @@ docker run -it --rm -v $(pwd)/input:/app/input -v $(pwd)/output:/app/output blur
 (Powershell)
 ```bash
 docker run -it --rm -v ${pwd}/input:/app/input -v ${pwd}/output:/app/output blurr
-```
-
-## Installing packages leveraging cuda 
-
-To install the packages that leverage cuda, run the following command: 
-
-```bash
-pip install -r requirements_cuda.txt
 ```
 
 # YOLO NAS model 
