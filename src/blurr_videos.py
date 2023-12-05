@@ -17,6 +17,9 @@ import yaml
 # TMP directory creation 
 import tempfile
 
+# Blob services 
+from azure.storage.blob import BlobServiceClient
+
 # Reading the configuration file
 with open("configuration.yml", "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
@@ -30,26 +33,100 @@ classes_to_blur = config['CLASSES_TO_BLURR']
 # Extracting the blurr intensity 
 blurr_intensity = config['BLURR_INTENSITY']
 
-def pipeline() -> None: 
+# Extracting the input connection string and container name 
+input_connection_string = config['INPUT_CONNECTION_STRING']
+input_container_name = config['INPUT_CONTAINER_NAME']
+
+# Extracting the output connection string and container name
+output_connection_string = config['OUTPUT_CONNECTION_STRING']
+output_container_name = config['OUTPUT_CONTAINER_NAME']
+
+def is_blob_video(blob_name: str) -> bool:
+    """
+    Checks if the blob is an image
+    """
+    return blob_name.endswith('.MP4') or blob_name.endswith('.mp4') or blob_name.endswith('.AVI') or blob_name.endswith('.avi') or blob_name.endswith('.MOV') or blob_name.endswith('.mov')
+
+def pipeline(dl_video: bool = True) -> None: 
     # Getting the current directory
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # Path to videos 
-    videos_dir = os.path.join(current_dir, '..', 'input', "videos")
-    videos_dir_output = os.path.join(current_dir, '..', 'output', "postprocessed_videos")
-    if not os.path.exists(videos_dir_output):
-        os.makedirs(videos_dir_output, exist_ok=True)
+    # Initial class names 
+    class_names = None 
+    class_names_dict = {}
 
-    # Listing all the videos
-    videos = os.listdir(videos_dir)
+    # Creating the connection 
+    blob_service_client = BlobServiceClient.from_connection_string(input_connection_string)
+
+    # Getting the container
+    container_client = blob_service_client.get_container_client(input_container_name)
+
+    # Listing all the blobs 
+    blobs = container_client.list_blobs()
+
+    # Only leaving the videos
+    blobs = [blob for blob in blobs if is_blob_video(blob.name)]
+
+    # Creating the input directory 
+    input_dir = os.path.join(current_dir, '..', 'input', "video")
+    os.makedirs(input_dir, exist_ok=True)
+
+    # Creating the output dir 
+    postprocessed_videos_dir = os.path.join(current_dir, '..', 'output', "video")
+    os.makedirs(postprocessed_videos_dir, exist_ok=True)
+
+    # Downloading the videos
+    if dl_video:
+        for blob in tqdm(blobs, desc='Downloading the videos'): 
+            # Getting the base name
+            base_name = os.path.basename(blob.name)
+
+            # Getting everything except the base name from blob name 
+            blob_dir = blob.name.replace(base_name, '')
+
+            # Creating the directory
+            os.makedirs(os.path.join(input_dir, blob_dir), exist_ok=True)
+
+            # Defining the path to the image 
+            path = os.path.join(input_dir, blob_dir, base_name)
+
+            # Downloading the blob 
+            blob_client = blob_service_client.get_blob_client(container=input_container_name, blob=blob.name)
+            with open(path, "wb") as f:
+                f.write(blob_client.download_blob().readall())
+
+    # Creating the containers for output 
+    blob_service_client = BlobServiceClient.from_connection_string(output_connection_string)
+
+    # Getting the container
+    container_client = blob_service_client.get_container_client(output_container_name)
 
     # Placeholder for class names 
     class_names = None
 
+    # Listing all the videps in the input dir up to the most granular level
+    # Getting all the directories
+    # Iterating over the directories
+    # Getting all the images in the directory
+    # Adding them to the list of images
+    videos = []
+    for root, _, files in os.walk(input_dir):
+        if len(files) > 0:
+            for file in files:
+                if is_blob_video(file):
+                    # Getting the path to the image
+                    path = os.path.join(root, file)
+
+                    # Getting the relative path
+                    rel_path = os.path.relpath(path, input_dir)
+
+                    # Adding the relative path to the list of images
+                    videos.append(rel_path)   
+
     # Iterating over the videos
     for video in videos:
         # Defining the path to video
-        path = os.path.join(videos_dir, video)
+        path = os.path.join(input_dir, video)
 
         # Creating a tmp dir for frames
         tmp_dir_frames = tempfile.mkdtemp()
@@ -134,9 +211,16 @@ def pipeline() -> None:
             # Saving the image
             cv2.imwrite(image_path, img_cv)
 
-        # Defining the path to the video
-        video_path = os.path.join(videos_dir_output, video)
+        # Getting the base name of the video
+        base_name = os.path.basename(video)
 
+        # Getting the directory of the video
+        video_dir = video.replace(base_name, '')
+
+        # Creatign the dir 
+        os.makedirs(os.path.join(postprocessed_videos_dir, video_dir), exist_ok=True)
+
+        # Listing the images
         images = os.listdir(tmp_dir_postprocessed_images)
 
         # Creating the image dictionary where the key is the image name and the image index 
@@ -156,7 +240,7 @@ def pipeline() -> None:
         size = (img.shape[1], img.shape[0])
 
         # Defining the video writer
-        out = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
+        out = cv2.VideoWriter(os.path.join(postprocessed_videos_dir, video_dir, base_name), cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
 
         # Iterating over the images
         for image in tqdm(images):
@@ -175,5 +259,8 @@ def pipeline() -> None:
         shutil.rmtree(tmp_dir_frames)
         shutil.rmtree(tmp_dir_postprocessed_images)
 
+        # Uploading the video
+        with open(os.path.join(postprocessed_videos_dir, video_dir, base_name), "rb") as data:
+            container_client.upload_blob(name=video, data=data)
 if __name__ == '__main__':
     pipeline()
