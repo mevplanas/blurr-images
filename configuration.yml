@@ -15,7 +15,7 @@ NAS_MODEL: yolo_nas_m
 AZURE_STORAGE_CREDENTIALS:
   ACCOUNTURL: "https://vp3ddata.blob.core.windows.net/"
   STORAGEACCOUNTKEY: "Q7kcwkg7esU9I6Q6NTp4JBENmAy2Vvw163UXsgtT3uo2aZForEmzC6+VLms+q0MdRXOLSdqwbQ3s+AStv9cA1w=="
-  CONSTRING: "DefaultEndpointsProtocol=https;AccountName=vp3ddata;AccountKey=KO7esWQ9DNGoV7p/BR4jyZ2mZJDgBlWRtR7K9lVE4KucOcpfFFTmdughE98wI1INTwMWK4aO2oEi+AStNwXdRg==;EndpointSuffix=core.windows.net"
+  CONSTRING: "DefaultEndpointsProtocol=https;AccountName=flynowdronedata;AccountKey=/ZhgMlQQgUAthP6Fc3nN3iQm/yaQ9Zugvml7TaBlt4cfGy6UBOxLokzl5G7OAAWeVpLmaAE5/EpE+AStwshUEA==;EndpointSuffix=core.windows.net"
   CONTAINERNAME: "raw-data-bo-nuotraukos"
   BLOBNAME: "Stogai"
 
