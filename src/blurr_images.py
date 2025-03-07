@@ -43,10 +43,6 @@ blurr_intensity = int(config["BLURR_INTENSITY"])
 input_connection_string = config["INPUT_CONNECTION_STRING"]
 input_container_name = config["INPUT_CONTAINER_NAME"]
 
-# Extracting the output connection string and container name
-output_connection_string = config["OUTPUT_CONNECTION_STRING"]
-output_container_name = config["OUTPUT_CONTAINER_NAME"]
-
 
 def is_blob_image(blob_name: str) -> bool:
     """
