@@ -1,5 +1,5 @@
-# Base python 3.9 image
-FROM python:3.9-slim-buster
+# Base python 3.11 image
+FROM python:3.11-slim-buster
 
 # Setting to non-interactive mode
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Updating the apt-get package manager
 RUN apt-get update
 
-# Installing gcc 
+# Installing gcc
 RUN apt-get install -y gcc
 
 # Install ffmpeg and other dependencies
@@ -22,13 +22,13 @@ RUN pip3 install -r requirements.txt
 # Creating the app directory
 WORKDIR /app
 
-# Copying over the main scripts 
-COPY src src 
+# Copying over the main scripts
+COPY src src
 
-# Main run script 
+# Main run script
 COPY run.py run.py
 
-# Copying over the configuration.yml file 
+# Copying over the configuration.yml file
 COPY configuration.yml configuration.yml
 
 # The command to run the script

@@ -1,2 +1,5 @@
-super-gradients==3.2.1
+ultralytics==8.3.85
 tqdm==4.66.1
+azure-storage-blob==12.19.0
+pre-commit==4.1.0
+exif==1.6.1

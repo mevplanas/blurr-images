@@ -8,3 +8,7 @@ images/
 __pycache__/
 blurr_env/
 input/video
+venv/
+yolo*
+input/
+log.txt
