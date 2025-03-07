@@ -1,5 +1,5 @@
 CLASSES_TO_BLURR:
-  - person 
+  - person
   - car
   - van
   - bus
@@ -9,12 +9,12 @@ CLASSES_TO_BLURR:
 # If value is 1, the image part will be completely blurred
 BLURR_INTENSITY: 0.7
 
-# NAS model to use 
+# NAS model to use
 NAS_MODEL: yolo_nas_l
 
-# Azure credentials 
+# Azure credentials
 INPUT_CONNECTION_STRING:
 INPUT_CONTAINER_NAME:
 
-OUTPUT_CONNECTION_STRING: 
-OUTPUT_CONTAINER_NAME: 
+OUTPUT_CONNECTION_STRING:
+OUTPUT_CONTAINER_NAME:
