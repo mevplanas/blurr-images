@@ -131,13 +131,19 @@ def pipeline() -> None:
         img_metadata = Image(path)
 
         # Getting the altitude
-        altitude = img_metadata.gps_altitude
+        # In the default case, we would NOT blur the image if the altitude is not present
+        altitude = 1000
+        try:
+            altitude = img_metadata.gps_altitude
+        except Exception as e:  # If the altitude is not present, we will use the default
+            print(f"Error reading the altitude: {e}")
 
         # Calculating the real height from ground
         height_from_ground = altitude - VILNIUS_ALTITUDE
 
         # Only blurring, if the image passes the treshold
         if height_from_ground < config["MINIMUM_HEIGHT_FROM_GROUND"]:
+            print(f"Blurring {blob.name}")
 
             # Predicting on the downloaded image
             hat = yolo_nas.predict(
@@ -173,15 +179,12 @@ def pipeline() -> None:
                         img_cv[y0:y1, x0:x1], (blurr_intensity, blurr_intensity)
                     )
 
-            # Overwritting the original image
+            # Writing the blurred image
             cv2.imwrite(path, img_cv)
-
-            # Adding all the exif information to the image
-            img_metadata.save(path)
 
             # Uploading to the same place in the blob
             with open(path, "rb") as data:
-                container_client.upload_blob(name=blob.name, data=data)
+                container_client.upload_blob(name=blob.name, data=data, overwrite=True)
 
         # Deleting the image from local storage
         os.remove(path)

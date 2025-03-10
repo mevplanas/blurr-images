@@ -92,11 +92,11 @@ CLASSES_TO_BLURR:
   - train
   - boat
 
-MODEL_CONFIDENCE: 0.1
-MODEL_IOU: 0.6
+MODEL_CONFIDENCE: 0.025
+MODEL_IOU: 0.1
 
 # Defining the height from ground for the open CV to blur the image
-MINIMUM_HEIGHT_FROM_GROUND: 20
+MINIMUM_HEIGHT_FROM_GROUND: 50
 
 # If value is 0, no blur will be applied
 # If value is 100, the image part will be completely blurred
