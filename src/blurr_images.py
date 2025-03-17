@@ -19,6 +19,19 @@ from exif import Image
 # Blob storage
 from azure.storage.blob import BlobServiceClient
 
+# Datetime 
+from datetime import datetime
+
+# Spark
+from pyspark.sql import SparkSession
+from pyspark.sql import Row
+
+spark = (
+    SparkSession.builder.appName("LocalSparkApp")
+    .master("local[*]")
+    .getOrCreate()
+)
+
 # Hardcoding Vilnius altitude
 VILNIUS_ALTITUDE = 112
 
@@ -63,14 +76,18 @@ def pipeline() -> None:
     # Infering the current directory
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # Creating a log.txt file to log the processed blobs
-    log_file = os.path.join(current_dir, "..", "log.txt")
-    log = []
-    if not os.path.exists(log_file):
-        with open(log_file, "w") as f:
-            f.write("")
-    else:
-        log = open(log_file, "r").read().split("\n")
+    # Get the list of already processed file names from the feature store table.
+    try:
+        processed_df = spark.table("blurred_images_logs_table").select("file_name")
+        processed_files = set(row.file_name for row in processed_df.collect())
+    except Exception as e:
+        # If the table doesn't exist yet or there's an error, assume no files have been processed.
+        print(f"Could not read feature store table: {e}")
+        processed_files = set()
+
+    # Initialize list to store new records for the feature store table.
+    # Each record is a tuple: (file_name, timestamp, blurred)
+    records = []
 
     # Initial class names
     class_names = None
@@ -94,7 +111,7 @@ def pipeline() -> None:
     blobs = [blob for blob in blobs if "00_UNSORTED" not in blob.name]
 
     # Creating the unique blob names and only processing the ones that are not in the log
-    blobs = [blob for blob in blobs if blob.name not in log]
+    blobs = [blob for blob in blobs if blob.name not in processed_files]
 
     # Creating the input directory
     input_dir = os.path.join(current_dir, "..", "input")
@@ -140,6 +157,9 @@ def pipeline() -> None:
 
         # Calculating the real height from ground
         height_from_ground = altitude - VILNIUS_ALTITUDE
+
+        # Initialize the blurred objects counter
+        blurred_count = 0
 
         # Only blurring, if the image passes the treshold
         if height_from_ground < config["MINIMUM_HEIGHT_FROM_GROUND"]:
@@ -189,9 +209,16 @@ def pipeline() -> None:
         # Deleting the image from local storage
         os.remove(path)
 
-        # Appending the blob name to the log.txt file
-        with open(log_file, "a") as f:
-            f.write(blob.name + "\n")
+        # Record the processing details with the current timestamp.
+        # blurred is set to 1 if at least one object was blurred, otherwise 0.
+        records.append((blob.name, datetime.now(), 1 if blurred_count > 0 else 0, blurred_count))
+
+    # After processing all blobs, create a Spark DataFrame from the records and append to the feature store table.
+    if records:
+        rows = [Row(file_name=r[0], timestamp=r[1], blurred=r[2], blurred_objects=r[3]) for r in records]
+        records_df = spark.createDataFrame(rows)
+        records_df.write.format("delta").mode("append").saveAsTable("my_feature_store_table")
+
 
 
 if __name__ == "__main__":
