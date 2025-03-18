@@ -19,18 +19,14 @@ from exif import Image
 # Blob storage
 from azure.storage.blob import BlobServiceClient
 
-# Datetime 
+# Datetime
 from datetime import datetime
 
 # Spark
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
-spark = (
-    SparkSession.builder.appName("LocalSparkApp")
-    .master("local[*]")
-    .getOrCreate()
-)
+spark = SparkSession.builder.appName("LocalSparkApp").master("local[*]").getOrCreate()
 
 # Hardcoding Vilnius altitude
 VILNIUS_ALTITUDE = 112
@@ -38,6 +34,9 @@ VILNIUS_ALTITUDE = 112
 # Reading the configuration file
 with open("configuration.yml", "r") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
+
+# Extracting the log table name
+log_table_name = config["LOG_TABLE_NAME"]
 
 # Saving the class names
 idx2class = config["CLASS_NAMES"]
@@ -78,7 +77,7 @@ def pipeline() -> None:
 
     # Get the list of already processed file names from the feature store table.
     try:
-        processed_df = spark.table("blurred_images_logs_table").select("file_name")
+        processed_df = spark.table(log_table_name).select("file_name")
         processed_files = set(row.file_name for row in processed_df.collect())
     except Exception as e:
         # If the table doesn't exist yet or there's an error, assume no files have been processed.
@@ -88,10 +87,6 @@ def pipeline() -> None:
     # Initialize list to store new records for the feature store table.
     # Each record is a tuple: (file_name, timestamp, blurred)
     records = []
-
-    # Initial class names
-    class_names = None
-    class_names_dict = {}
 
     # Creating the connection
     blob_service_client = BlobServiceClient.from_connection_string(
@@ -199,6 +194,9 @@ def pipeline() -> None:
                         img_cv[y0:y1, x0:x1], (blurr_intensity, blurr_intensity)
                     )
 
+                    # Incrementing the blurred objects counter
+                    blurred_count += 1
+
             # Writing the blurred image
             cv2.imwrite(path, img_cv)
 
@@ -211,14 +209,18 @@ def pipeline() -> None:
 
         # Record the processing details with the current timestamp.
         # blurred is set to 1 if at least one object was blurred, otherwise 0.
-        records.append((blob.name, datetime.now(), 1 if blurred_count > 0 else 0, blurred_count))
+        records.append(
+            (blob.name, datetime.now(), 1 if blurred_count > 0 else 0, blurred_count)
+        )
 
     # After processing all blobs, create a Spark DataFrame from the records and append to the feature store table.
     if records:
-        rows = [Row(file_name=r[0], timestamp=r[1], blurred=r[2], blurred_objects=r[3]) for r in records]
+        rows = [
+            Row(file_name=r[0], timestamp=r[1], blurred=r[2], blurred_objects=r[3])
+            for r in records
+        ]
         records_df = spark.createDataFrame(rows)
-        records_df.write.format("delta").mode("append").saveAsTable("my_feature_store_table")
-
+        records_df.write.format("delta").mode("append").saveAsTable(log_table_name)
 
 
 if __name__ == "__main__":
