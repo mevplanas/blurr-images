@@ -225,21 +225,21 @@ def pipeline() -> None:
     # After processing all blobs, create a Spark DataFrame from the records and append to the feature store table.
     if records:
         rows = [
-            Row(file_name=r[0], timestamp=r[1], blurred=r[2], blurred_objects=r[3])
+            Row(file_name=r[0], datetime=r[1], blurred=r[2], blurred_objects=r[3])
             for r in records
         ]
         records_df = spark.createDataFrame(rows)
 
         # Ensuring the datatypes:
         # file_name: string
-        # timestamp: timestamp
+        # datetime: timestamp
         # blurred: boolean
         # blurred_objects: int
         records_df = records_df.withColumn(
             "file_name", records_df.file_name.cast("string")
         )
         records_df = records_df.withColumn(
-            "timestamp", records_df.timestamp.cast("timestamp")
+            "datetime", records_df.timestamp.cast("timestamp")
         )
         records_df = records_df.withColumn(
             "blurred", records_df.blurred.cast("boolean")
@@ -249,7 +249,9 @@ def pipeline() -> None:
         )
 
         # Appending the records to the log table
-        records_df.write.format("delta").mode("append").saveAsTable(log_table_name)
+        records_df.write.format("delta").mode("append").option(
+            "mergeSchema", "true"
+        ).saveAsTable(log_table_name)
 
 
 if __name__ == "__main__":
