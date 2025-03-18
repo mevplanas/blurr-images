@@ -214,7 +214,7 @@ def pipeline() -> None:
                 blob.name,
                 datetime.now(),
                 True if blurred_count > 0 else False,
-                blurred_count,
+                int(blurred_count),
             )
         )
 
