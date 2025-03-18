@@ -210,7 +210,12 @@ def pipeline() -> None:
         # Record the processing details with the current timestamp.
         # blurred is set to 1 if at least one object was blurred, otherwise 0.
         records.append(
-            (blob.name, datetime.now(), 1 if blurred_count > 0 else 0, blurred_count)
+            (
+                blob.name,
+                datetime.now(),
+                True if blurred_count > 0 else False,
+                blurred_count,
+            )
         )
 
     # After processing all blobs, create a Spark DataFrame from the records and append to the feature store table.
