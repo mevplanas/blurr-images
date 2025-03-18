@@ -239,7 +239,7 @@ def pipeline() -> None:
             "file_name", records_df.file_name.cast("string")
         )
         records_df = records_df.withColumn(
-            "datetime", records_df.timestamp.cast("timestamp")
+            "datetime", records_df.datetime.cast("timestamp")
         )
         records_df = records_df.withColumn(
             "blurred", records_df.blurred.cast("boolean")
