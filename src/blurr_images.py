@@ -218,6 +218,10 @@ def pipeline() -> None:
             )
         )
 
+    print(f"Processed {len(blobs)} images.")
+    print(f"Blurred {sum(r[2] for r in records)} images.")
+    print(f"Blurred {sum(r[3] for r in records)} objects.")
+
     # After processing all blobs, create a Spark DataFrame from the records and append to the feature store table.
     if records:
         rows = [
@@ -225,6 +229,26 @@ def pipeline() -> None:
             for r in records
         ]
         records_df = spark.createDataFrame(rows)
+
+        # Ensuring the datatypes:
+        # file_name: string
+        # timestamp: timestamp
+        # blurred: boolean
+        # blurred_objects: int
+        records_df = records_df.withColumn(
+            "file_name", records_df.file_name.cast("string")
+        )
+        records_df = records_df.withColumn(
+            "timestamp", records_df.timestamp.cast("timestamp")
+        )
+        records_df = records_df.withColumn(
+            "blurred", records_df.blurred.cast("boolean")
+        )
+        records_df = records_df.withColumn(
+            "blurred_objects", records_df.blurred_objects.cast("int")
+        )
+
+        # Appending the records to the log table
         records_df.write.format("delta").mode("append").saveAsTable(log_table_name)
 
 
