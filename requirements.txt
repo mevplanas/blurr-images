@@ -3,3 +3,4 @@ tqdm==4.66.1
 azure-storage-blob==12.19.0
 pre-commit==4.1.0
 exif==1.6.1
+pyspark==3.5.5

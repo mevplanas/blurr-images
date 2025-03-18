@@ -108,3 +108,6 @@ YOLO_MODEL: yolo11m
 # Azure credentials
 INPUT_CONNECTION_STRING: DefaultEndpointsProtocol=https;AccountName=flynowdronedata;AccountKey=/ZhgMlQQgUAthP6Fc3nN3iQm/yaQ9Zugvml7TaBlt4cfGy6UBOxLokzl5G7OAAWeVpLmaAE5/EpE+AStwshUEA==;EndpointSuffix=core.windows.net
 INPUT_CONTAINER_NAME: dronedata
+
+# Defining the table name
+LOG_TABLE_NAME: blurred_images_logs_table
