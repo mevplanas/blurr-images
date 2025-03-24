@@ -92,8 +92,8 @@ CLASSES_TO_BLURR:
   - train
   - boat
 
-MODEL_CONFIDENCE: 0.025
-MODEL_IOU: 0.1
+MODEL_CONFIDENCE: 0.015
+MODEL_IOU: 0.05
 
 # Defining the height from ground for the open CV to blur the image
 MINIMUM_HEIGHT_FROM_GROUND: 50
