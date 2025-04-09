@@ -1,4 +1,3 @@
-# OS traversal
 import os
 
 # Importing the computer vision model
@@ -13,7 +12,7 @@ from tqdm import tqdm
 # YAML reading
 import yaml
 
-# Image data parsing
+# Image data parsing (no longer used for altitude)
 from exif import Image
 
 # Blob storage
@@ -26,10 +25,41 @@ from datetime import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
+# Import Pillow for the new relative altitude function
+from PIL import Image as PILImage
+
 spark = SparkSession.builder.appName("LocalSparkApp").master("local[*]").getOrCreate()
 
-# Hardcoding Vilnius altitude
-VILNIUS_ALTITUDE = 112
+
+# New function to extract relative altitude from image metadata using XMP.
+def get_relative_altidute(img_path: str) -> float:
+    """
+    Description
+    -----------
+    The function extracts relative height from image metadata.
+ 
+    Parameters
+    ----------
+    :param img_path : Path to the image
+ 
+    Returns
+    ----------
+    :return: Relative height of the image
+    """
+    # Set default altitude to 0
+    altitude = 0.0
+    try:
+        with PILImage.open(img_path) as img:
+            # Extract the XMP metadata from the image
+            xmp = img.getxmp()
+            # Get relative height from the XMP metadata
+            altitude = xmp["xmpmeta"]["RDF"]["Description"]["RelativeAltitude"]
+            # Convert the altitude to a float
+            altitude = float(altitude)
+    except Exception as e:
+        print(f"Error extracting XMP metadata from image: {e}")
+    return altitude
+
 
 # Reading the configuration file
 with open("configuration.yml", "r") as f:
@@ -72,7 +102,7 @@ def is_blob_image(blob_name: str) -> bool:
 
 # Defining the pipeline
 def pipeline() -> None:
-    # Infering the current directory
+    # Infer the current directory
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     # Get the list of already processed file names from the feature store table.
@@ -85,7 +115,7 @@ def pipeline() -> None:
         processed_files = set()
 
     # Initialize list to store new records for the feature store table.
-    # Each record is a tuple: (file_name, timestamp, blurred)
+    # Each record is a tuple: (file_name, timestamp, blurred, blurred_objects)
     records = []
 
     # Creating the connection
@@ -139,24 +169,16 @@ def pipeline() -> None:
         with open(path, "wb") as f:
             f.write(blob_client.download_blob().readall())
 
-        # Reading the exif image data
-        img_metadata = Image(path)
+        # Using the new function to extract the relative altitude from the image metadata.
+        altitude = get_relative_altidute(path)
 
-        # Getting the altitude
-        # In the default case, we would NOT blur the image if the altitude is not present
-        altitude = 1000
-        try:
-            altitude = img_metadata.gps_altitude
-        except Exception as e:  # If the altitude is not present, we will use the default
-            print(f"Error reading the altitude: {e}")
-
-        # Calculating the real height from ground
-        height_from_ground = altitude - VILNIUS_ALTITUDE
+        # Since we now use the relative altitude, the height from ground is set directly
+        height_from_ground = altitude
 
         # Initialize the blurred objects counter
         blurred_count = 0
 
-        # Only blurring, if the image passes the treshold
+        # Only blurring, if the image passes the threshold
         if height_from_ground < config["MINIMUM_HEIGHT_FROM_GROUND"]:
             print(f"Blurring {blob.name}")
 
@@ -167,10 +189,8 @@ def pipeline() -> None:
                 iou=config.get("MODEL_IOU", 0.9),
             )
 
-            # Getting the bounding boxes
+            # Getting the bounding boxes and labels
             boxes = hat[0].boxes
-
-            # Getting the labels
             labels = hat[0].boxes.cls
             labels = labels.cpu().numpy()
             label_names = [idx2class[label] for label in labels]
@@ -178,12 +198,12 @@ def pipeline() -> None:
             # Extracting the xyxy coordinates
             bboxes = boxes.xyxy
 
-            # Bluring
+            # Blurring
             img_cv = cv2.imread(path)
 
             for i, box in enumerate(bboxes):
                 if label_names[i] in classes_to_blur:
-                    # Getting the x, y, w, h
+                    # Getting the coordinates
                     x0, y0, x1, y1 = box[0], box[1], box[2], box[3]
 
                     # Converting to int
@@ -208,7 +228,7 @@ def pipeline() -> None:
         os.remove(path)
 
         # Record the processing details with the current timestamp.
-        # blurred is set to 1 if at least one object was blurred, otherwise 0.
+        # 'blurred' is True if at least one object was blurred, otherwise False.
         records.append(
             (
                 blob.name,
@@ -231,27 +251,13 @@ def pipeline() -> None:
         records_df = spark.createDataFrame(rows)
 
         # Ensuring the datatypes:
-        # file_name: string
-        # datetime: timestamp
-        # blurred: boolean
-        # blurred_objects: int
-        records_df = records_df.withColumn(
-            "file_name", records_df.file_name.cast("string")
-        )
-        records_df = records_df.withColumn(
-            "datetime", records_df.datetime.cast("timestamp")
-        )
-        records_df = records_df.withColumn(
-            "blurred", records_df.blurred.cast("boolean")
-        )
-        records_df = records_df.withColumn(
-            "blurred_objects", records_df.blurred_objects.cast("int")
-        )
+        records_df = records_df.withColumn("file_name", records_df.file_name.cast("string"))
+        records_df = records_df.withColumn("datetime", records_df.datetime.cast("timestamp"))
+        records_df = records_df.withColumn("blurred", records_df.blurred.cast("boolean"))
+        records_df = records_df.withColumn("blurred_objects", records_df.blurred_objects.cast("int"))
 
         # Appending the records to the log table
-        records_df.write.format("delta").mode("append").option(
-            "mergeSchema", "true"
-        ).saveAsTable(log_table_name)
+        records_df.write.format("delta").mode("append").option("mergeSchema", "true").saveAsTable(log_table_name)
 
 
 if __name__ == "__main__":

@@ -12,3 +12,4 @@ venv/
 yolo*
 input/
 log.txt
+blurr_img_test.py
