@@ -1,3 +1,6 @@
+numpy==1.26.4
+pandas==2.2.2
+
 ultralytics==8.3.85
 tqdm==4.66.1
 azure-storage-blob==12.19.0
